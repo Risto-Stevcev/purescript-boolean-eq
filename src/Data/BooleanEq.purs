@@ -13,3 +13,6 @@ instance booleanBooleanEq ∷ BooleanEq Boolean
 
 isBooleanEq ∷ ∀ a. BooleanEq a ⇒ a → Boolean
 isBooleanEq a = (a == tt) || (a == ff)
+
+toBoolean ∷ ∀ a. BooleanEq a ⇒ a → Boolean
+toBoolean a = if (a == tt) then true else false

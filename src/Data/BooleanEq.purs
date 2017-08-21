@@ -5,8 +5,8 @@ import Data.BooleanAlgebra (tt, ff)
 
 -- | Expresses a congruence with Boolean equality
 -- |
--- | Instances must also satisfy:
--- | ((a == tt) || (a == ff)) == true
+-- | Instances must also satisfy:  
+-- | `((a == tt) || (a == ff)) == true`
 class (BooleanAlgebra a, Eq a) ⇐ BooleanEq a
 
 instance booleanBooleanEq ∷ BooleanEq Boolean

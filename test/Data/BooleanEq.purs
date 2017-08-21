@@ -82,12 +82,48 @@ instance booleanAlgebraLogic ∷ BooleanAlgebra Logic
 instance booleanEqLogic ∷ BooleanEq Logic
 
 
+-- | Example logic that's isomorphic to Boolean
+data Toggle = On | Off
+
+instance arbitraryToggle ∷ Arbitrary Toggle where
+  arbitrary = elements $ On :| [Off]
+
+-- | This Eq implementation satisfies BooleanEq
+instance eqToggle ∷ Eq Toggle where
+  eq On On = true
+  eq Off Off = true
+  eq _ _ = false
+
+instance heytingAlgebraToggle ∷ HeytingAlgebra Toggle where
+  not On  = Off
+  not Off = On
+
+  disj On  On  = On
+  disj Off Off = Off
+  disj On  Off = On
+  disj Off On  = On
+
+  conj On  On  = On
+  conj Off Off = Off
+  conj On  Off = Off
+  conj Off On  = Off
+
+  implies a b = not a `disj` b
+
+  tt = On
+  ff = Off
+
+instance booleanAlgebraToggle ∷ BooleanAlgebra Toggle
+
+instance booleanEqToggle ∷ BooleanEq Toggle
+
 
 main ∷ Eff (QCRunnerEffects (exception ∷ EXCEPTION)) Unit
 main = run [consoleReporter] do
   describe "BooleanEq Boolean" do
     it "should satisfy the BooleanEq laws" do
       quickCheck (isBooleanEq ∷ Boolean → Boolean)
+
   describe "HeytingAlgebra Logic" do
     it "should satisfy the HeytingAlgebra laws" do
       liftEff $ checkHeytingAlgebra (Proxy ∷ Proxy Logic)
@@ -97,3 +133,13 @@ main = run [consoleReporter] do
   describe "BooleanEq Logic" do
     it "should not satisfy the BooleanEq laws" do
       quickCheckFail (isBooleanEq ∷ Logic → Boolean)
+
+  describe "HeytingAlgebra Toggle" do
+    it "should satisfy the HeytingAlgebra laws" do
+      liftEff $ checkHeytingAlgebra (Proxy ∷ Proxy Toggle)
+  describe "BooleanAlgebra Toggle" do
+    it "should satisfy the BooleanAlgebra laws" do
+      liftEff $ checkBooleanAlgebra (Proxy ∷ Proxy Toggle)
+  describe "BooleanEq Toggle" do
+    it "should satisfy the BooleanEq laws" do
+      quickCheck (isBooleanEq ∷ Toggle → Boolean)

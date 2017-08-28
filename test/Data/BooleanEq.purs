@@ -9,10 +9,12 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 import Data.BooleanEq (class BooleanEq, isBooleanEq)
 import Data.Either (isLeft)
+import Data.HeytingAlgebra (tt, ff)
+import Data.Newtype (class Newtype, over, over2)
 import Data.NonEmpty ((:|))
 import Test.QuickCheck (class Testable)
-import Test.QuickCheck.Arbitrary (class Arbitrary)
-import Test.QuickCheck.Gen (elements)
+import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
+import Test.QuickCheck.Gen (Gen, elements)
 import Test.QuickCheck.Laws.Data.BooleanAlgebra (checkBooleanAlgebra)
 import Test.QuickCheck.Laws.Data.HeytingAlgebra (checkHeytingAlgebra)
 import Test.Spec (describe, it)
@@ -118,6 +120,31 @@ instance booleanAlgebraToggle ∷ BooleanAlgebra Toggle
 instance booleanEqToggle ∷ BooleanEq Toggle
 
 
+-- | Example showing that Unit does not satisfy BooleanEq because `tt == ff`
+newtype Foo = Foo Unit
+
+derive instance newtypeFoo ∷ Newtype Foo _
+
+instance heytingAlgebraFoo ∷ HeytingAlgebra Foo where
+  not = over Foo not
+  conj = over2 Foo conj
+  disj = over2 Foo disj
+  implies a b = not a `disj` b
+  tt = Foo (tt ∷ Unit)
+  ff = Foo (ff ∷ Unit)
+
+instance booleanAlgebraFoo ∷ BooleanAlgebra Foo
+
+instance eqFoo ∷ Eq Foo where
+  eq (Foo a) (Foo b) = a == b
+
+instance booleanEqFoo ∷ BooleanEq Foo
+
+instance arbitraryFoo ∷ Arbitrary Foo where
+  arbitrary = (pure <<< Foo) =<< (arbitrary ∷ Gen Unit)
+
+
+
 main ∷ Eff (QCRunnerEffects (exception ∷ EXCEPTION)) Unit
 main = run [consoleReporter] do
   describe "BooleanEq Boolean" do
@@ -143,3 +170,7 @@ main = run [consoleReporter] do
   describe "BooleanEq Toggle" do
     it "should satisfy the BooleanEq laws" do
       quickCheck (isBooleanEq ∷ Toggle → Boolean)
+
+  describe "BooleanEq Foo (Unit)" do
+    it "should not satisfy the BooleanEq laws (tt == ff)" do
+      quickCheckFail (isBooleanEq ∷ Foo → Boolean)
